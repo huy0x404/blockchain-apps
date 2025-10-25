@@ -1,0 +1,6 @@
+Cấu hình API Keys: Thêm các API keys thực vào file .env
+Cài đặt MongoDB: Để lưu trữ dữ liệu wallet, airdrop, token
+Tạo 2 trang còn thiếu: DeFi Analytics và AI Analyzer
+Thêm biểu đồ: Sử dụng Chart.js hoặc Recharts
+Testing: Test các API endpoints và tích hợp
+Deploy: Deploy backend lên Render/Railway và frontend lên Vercel
