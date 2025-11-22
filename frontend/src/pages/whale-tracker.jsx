@@ -3,10 +3,9 @@ import Layout from '../components/shared/Layout';
 import Card from '../components/cards/Card';
 import StatsCard from '../components/cards/StatsCard';
 import DataTable from '../components/tables/DataTable';
-import LoadingSpinner from '../components/shared/LoadingSpinner';
 import { useWhaleData, useRecentWhaleTransactions } from '../hooks/useWhaleData';
-import { FiActivity, FiDollarSign, FiUsers, FiTrendingUp } from 'react-icons/fi';
-import { formatAddress, formatNumber, formatUSD, getTimeAgo, getExplorerUrl } from '../utils/formatters';
+import { FiActivity, FiDollarSign, FiUsers, FiTrendingUp, FiExternalLink } from 'react-icons/fi';
+import { formatAddress, formatNumber, formatEth, formatTimeAgo } from '../utils/formatters';
 
 export default function WhaleTracker() {
   const [searchAddress, setSearchAddress] = useState('');
@@ -25,41 +24,37 @@ export default function WhaleTracker() {
     {
       header: '#',
       accessor: 'index',
-      render: (row, idx) => idx + 1,
+      render: (row, idx) => <span className="text-gray-400">{idx + 1}</span>,
     },
     {
       header: 'Address',
       accessor: 'address',
       render: (row) => (
         <a
-          href={getExplorerUrl('ethereum', 'address', row.address)}
+          href={`https://etherscan.io/address/${row.address}`}
           target="_blank"
           rel="noopener noreferrer"
-          className="text-blue-400 hover:text-blue-300"
+          className="text-blue-400 hover:text-blue-300 flex items-center gap-1"
         >
           {formatAddress(row.address)}
+          <FiExternalLink className="text-xs" />
         </a>
       ),
     },
     {
       header: 'Balance',
       accessor: 'balance',
-      render: (row) => `${formatNumber(row.balance?.toFixed(2))} ETH`,
+      render: (row) => <span className="font-mono text-white">{row.balance?.toFixed(2)} ETH</span>,
     },
     {
-      header: 'Total Transactions',
+      header: 'Transactions',
       accessor: 'totalTransactions',
-      render: (row) => formatNumber(row.totalTransactions),
+      render: (row) => <span className="text-gray-300">{formatNumber(row.totalTransactions)}</span>,
     },
     {
       header: 'Total Volume',
       accessor: 'totalVolume',
-      render: (row) => `${formatNumber(row.totalVolume?.toFixed(2))} ETH`,
-    },
-    {
-      header: 'Last Active',
-      accessor: 'lastActive',
-      render: (row) => getTimeAgo(row.lastActive),
+      render: (row) => <span className="font-mono text-green-400">{row.totalVolume?.toFixed(2)} ETH</span>,
     },
   ];
 
@@ -69,12 +64,13 @@ export default function WhaleTracker() {
       accessor: 'from',
       render: (row) => (
         <a
-          href={getExplorerUrl('ethereum', 'address', row.from)}
+          href={`https://etherscan.io/address/${row.from || row.whaleAddress}`}
           target="_blank"
           rel="noopener noreferrer"
-          className="text-blue-400 hover:text-blue-300"
+          className="text-blue-400 hover:text-blue-300 flex items-center gap-1"
         >
-          {formatAddress(row.from)}
+          {formatAddress(row.from || row.whaleAddress)}
+          <FiExternalLink className="text-xs" />
         </a>
       ),
     },
@@ -83,36 +79,46 @@ export default function WhaleTracker() {
       accessor: 'to',
       render: (row) => (
         <a
-          href={getExplorerUrl('ethereum', 'address', row.to)}
+          href={`https://etherscan.io/address/${row.to}`}
           target="_blank"
           rel="noopener noreferrer"
-          className="text-blue-400 hover:text-blue-300"
+          className="text-blue-400 hover:text-blue-300 flex items-center gap-1"
         >
           {formatAddress(row.to)}
+          <FiExternalLink className="text-xs" />
         </a>
       ),
     },
     {
       header: 'Value',
       accessor: 'valueETH',
-      render: (row) => `${formatNumber(row.valueETH?.toFixed(4))} ETH`,
+      render: (row) => (
+        <span className="font-mono text-green-400">
+          {(row.valueETH || row.value / 1e18)?.toFixed(4)} ETH
+        </span>
+      ),
     },
     {
       header: 'Time',
       accessor: 'timeStamp',
-      render: (row) => getTimeAgo(row.timeStamp * 1000),
+      render: (row) => (
+        <span className="text-gray-400">
+          {formatTimeAgo(row.timeStamp)}
+        </span>
+      ),
     },
     {
-      header: 'Hash',
+      header: 'Tx Hash',
       accessor: 'hash',
       render: (row) => (
         <a
-          href={getExplorerUrl('ethereum', 'tx', row.hash)}
+          href={`https://etherscan.io/tx/${row.hash}`}
           target="_blank"
           rel="noopener noreferrer"
-          className="text-blue-400 hover:text-blue-300"
+          className="text-blue-400 hover:text-blue-300 flex items-center gap-1"
         >
           {formatAddress(row.hash)}
+          <FiExternalLink className="text-xs" />
         </a>
       ),
     },
@@ -128,31 +134,36 @@ export default function WhaleTracker() {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
         <StatsCard
           title="Total Whales"
-          value={whales.length}
+          value={formatNumber(whales.length)}
           icon={<FiUsers />}
+          loading={whalesLoading}
         />
         <StatsCard
-          title="Active Today"
-          value={Math.floor(whales.length * 0.6)}
-          change={12.5}
+          title="Recent Transactions"
+          value={formatNumber(transactions.length)}
           icon={<FiActivity />}
+          loading={txLoading}
+        />
+        <StatsCard
+          title="Avg Balance"
+          value={whales.length > 0 
+            ? `${(whales.reduce((sum, w) => sum + (w.balance || 0), 0) / whales.length).toFixed(2)} ETH`
+            : '0 ETH'
+          }
+          icon={<FiDollarSign />}
+          loading={whalesLoading}
         />
         <StatsCard
           title="Total Volume"
-          value="$2.4M"
-          change={8.3}
-          icon={<FiDollarSign />}
-          prefix="$"
-        />
-        <StatsCard
-          title="Avg Transaction"
-          value="$45.2K"
-          change={-3.2}
+          value={whales.length > 0
+            ? `${whales.reduce((sum, w) => sum + (w.totalVolume || 0), 0).toFixed(2)} ETH`
+            : '0 ETH'
+          }
           icon={<FiTrendingUp />}
-          prefix="$"
+          loading={whalesLoading}
         />
       </div>
 

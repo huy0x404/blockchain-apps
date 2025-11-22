@@ -1,28 +1,25 @@
 const etherscanAPI = require('../api/etherscan');
 const dexScreenerAPI = require('../api/dexScreener');
-const Wallet = require('../models/Wallet');
 const cacheService = require('../services/cacheService');
-const telegramService = require('../services/telegramService');
 const logger = require('../utils/logger');
 const { formatAddress, weiToEther } = require('../utils/helpers');
-const { CACHE_TTL, ALERTS } = require('../utils/constants');
+const { CACHE_TTL } = require('../utils/constants');
 
 class WhaleController {
   /**
-   * Get whale wallets
+   * Get whale wallets from cache
    */
   async getWhaleWallets(req, res) {
     try {
-      const { limit = 50, sortBy = 'totalVolume' } = req.query;
+      const { limit = 50 } = req.query;
 
-      const whales = await Wallet.find({ isWhale: true })
-        .sort({ [sortBy]: -1 })
-        .limit(parseInt(limit));
+      const cacheKey = 'whales:list';
+      const whales = cacheService.get(cacheKey) || [];
 
       res.json({
         success: true,
         count: whales.length,
-        data: whales,
+        data: whales.slice(0, parseInt(limit)),
       });
     } catch (error) {
       logger.error(`getWhaleWallets error: ${error.message}`);
@@ -63,26 +60,14 @@ class WhaleController {
 
       const isWhale = balance >= 100 || totalVolume >= 1000;
 
-      // Save or update wallet
-      let wallet = await Wallet.findOne({ address: address.toLowerCase() });
-      if (!wallet) {
-        wallet = new Wallet({
-          address: address.toLowerCase(),
-          balance,
-          totalTransactions: transactions.length,
-          totalVolume,
-          isWhale,
-          lastActive: new Date(),
-        });
-      } else {
-        wallet.balance = balance;
-        wallet.totalTransactions = transactions.length;
-        wallet.totalVolume = totalVolume;
-        wallet.isWhale = isWhale;
-        wallet.lastActive = new Date();
-      }
-
-      await wallet.save();
+      const wallet = {
+        address: address.toLowerCase(),
+        balance,
+        totalTransactions: transactions.length,
+        totalVolume,
+        isWhale,
+        lastActive: new Date(),
+      };
 
       const result = {
         wallet,
@@ -113,23 +98,8 @@ class WhaleController {
     try {
       const { limit = 20 } = req.query;
 
-      const whales = await Wallet.find({ isWhale: true })
-        .sort({ lastActive: -1 })
-        .limit(10);
-
-      const transactions = [];
-
-      for (const whale of whales) {
-        const txs = await etherscanAPI.getTransactions(whale.address, 0, 99999999, 1, 5);
-        transactions.push(...txs.map(tx => ({
-          ...tx,
-          whaleAddress: whale.address,
-          valueETH: weiToEther(tx.value),
-        })));
-      }
-
-      // Sort by timestamp
-      transactions.sort((a, b) => b.timeStamp - a.timeStamp);
+      const cacheKey = 'whales:transactions';
+      const transactions = cacheService.get(cacheKey) || [];
 
       res.json({
         success: true,
@@ -152,15 +122,19 @@ class WhaleController {
     try {
       const { address } = req.params;
 
-      const wallet = await Wallet.findOne({ address: address.toLowerCase() });
-      if (!wallet) {
-        return res.status(404).json({
-          success: false,
-          error: 'Wallet not found',
-        });
-      }
-
+      const balance = await etherscanAPI.getBalance(address);
       const transactions = await etherscanAPI.getTransactions(address, 0, 99999999, 1, 100);
+      const totalVolume = transactions.reduce((sum, tx) => {
+        return sum + parseFloat(weiToEther(tx.value));
+      }, 0);
+
+      const wallet = {
+        address: address.toLowerCase(),
+        balance,
+        totalTransactions: transactions.length,
+        totalVolume,
+        isWhale: balance >= 100 || totalVolume >= 1000,
+      };
 
       // Analyze patterns
       const analysis = {

@@ -1,6 +1,5 @@
 const defiLlamaAPI = require('../api/defiLlama');
 const dexScreenerAPI = require('../api/dexScreener');
-const TokenData = require('../models/TokenData');
 const cacheService = require('../services/cacheService');
 const logger = require('../utils/logger');
 const { CACHE_TTL } = require('../utils/constants');

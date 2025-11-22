@@ -1,0 +1,26 @@
+services:
+  - type: web
+    name: blockchain-apps-api
+    env: node
+    region: singapore
+    plan: free
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000
+      - key: ETHERSCAN_API_KEY
+        sync: false
+      - key: ZAN_API_KEY
+        sync: false
+      - key: ZAN_API_URL
+        sync: false
+      - key: COINMARKETCAP_API_KEY
+        sync: false
+      - key: RATE_LIMIT_WINDOW_MS
+        value: 900000
+      - key: RATE_LIMIT_MAX_REQUESTS
+        value: 100

@@ -1,20 +1,47 @@
-const fetchService = require('../services/fetchService');
-const { API_ENDPOINTS } = require('../utils/constants');
+const coinmarketcapAPI = require('./coinmarketcap');
 const logger = require('../utils/logger');
 
+/**
+ * DexScreener replacement using CoinMarketCap API
+ * Since we don't have DexScreener API, we'll use CoinMarketCap for token data
+ */
 class DexScreenerAPI {
   constructor() {
-    this.baseURL = API_ENDPOINTS.DEXSCREENER;
+    this.cmcAPI = coinmarketcapAPI;
   }
 
   /**
-   * Search pairs
+   * Search pairs (using CMC search)
    */
   async searchPairs(query) {
     try {
-      return await fetchService.get(`${this.baseURL}/dex/search`, {
-        params: { q: query },
-      });
+      const data = await this.cmcAPI.search(query);
+      
+      if (data && data.data) {
+        const pairs = data.data.map(coin => ({
+          chainId: 'ethereum',
+          pairAddress: '0x0000000000000000000000000000000000000000',
+          baseToken: {
+            name: coin.name,
+            symbol: coin.symbol,
+            address: '0x0000000000000000000000000000000000000000',
+          },
+          priceUsd: coin.quote.USD.price.toString(),
+          priceChange: {
+            h24: coin.quote.USD.percent_change_24h,
+          },
+          volume: {
+            h24: coin.quote.USD.volume_24h,
+          },
+          liquidity: {
+            usd: coin.quote.USD.market_cap,
+          },
+        }));
+        
+        return { pairs };
+      }
+      
+      return { pairs: [] };
     } catch (error) {
       logger.error(`DexScreener searchPairs error: ${error.message}`);
       throw error;
@@ -22,13 +49,39 @@ class DexScreenerAPI {
   }
 
   /**
-   * Get pairs by token address
+   * Get pairs by token address (using CMC quotes)
    */
-  async getPairsByToken(chainId, tokenAddress) {
+  async getPairsByToken(chainId, tokenSymbol) {
     try {
-      return await fetchService.get(
-        `${this.baseURL}/dex/tokens/${chainId}/${tokenAddress}`
-      );
+      const data = await this.cmcAPI.getQuotes(tokenSymbol.toUpperCase());
+      
+      if (data && data.data) {
+        const coin = Object.values(data.data)[0];
+        
+        return {
+          pairs: [{
+            chainId,
+            baseToken: {
+              name: coin.name,
+              symbol: coin.symbol,
+              address: tokenSymbol,
+            },
+            priceUsd: coin.quote.USD.price.toString(),
+            priceChange: {
+              h24: coin.quote.USD.percent_change_24h,
+            },
+            volume: {
+              h24: coin.quote.USD.volume_24h,
+            },
+            liquidity: {
+              usd: coin.quote.USD.market_cap,
+            },
+            fdv: coin.quote.USD.fully_diluted_market_cap,
+          }],
+        };
+      }
+      
+      return { pairs: [] };
     } catch (error) {
       logger.error(`DexScreener getPairsByToken error: ${error.message}`);
       throw error;
@@ -36,13 +89,12 @@ class DexScreenerAPI {
   }
 
   /**
-   * Get specific pair
+   * Get specific pair (using CMC quotes)
    */
   async getPair(chainId, pairAddress) {
     try {
-      return await fetchService.get(
-        `${this.baseURL}/dex/pairs/${chainId}/${pairAddress}`
-      );
+      logger.warn('Pair data limited without DexScreener API');
+      return { pair: null };
     } catch (error) {
       logger.error(`DexScreener getPair error: ${error.message}`);
       throw error;
@@ -50,23 +102,24 @@ class DexScreenerAPI {
   }
 
   /**
-   * Get token profile
+   * Get token profile (using CMC info)
    */
-  async getTokenProfile(chainId, tokenAddress) {
+  async getTokenProfile(chainId, tokenSymbol) {
     try {
-      const data = await this.getPairsByToken(chainId, tokenAddress);
+      const data = await this.cmcAPI.getQuotes(tokenSymbol.toUpperCase());
       
-      if (data.pairs && data.pairs.length > 0) {
-        const pair = data.pairs[0];
+      if (data && data.data) {
+        const coin = Object.values(data.data)[0];
+        
         return {
-          address: tokenAddress,
-          name: pair.baseToken.name,
-          symbol: pair.baseToken.symbol,
-          price: parseFloat(pair.priceUsd),
-          priceChange24h: parseFloat(pair.priceChange.h24),
-          volume24h: parseFloat(pair.volume.h24),
-          liquidity: parseFloat(pair.liquidity.usd),
-          fdv: parseFloat(pair.fdv),
+          address: tokenSymbol,
+          name: coin.name,
+          symbol: coin.symbol,
+          price: parseFloat(coin.quote.USD.price),
+          priceChange24h: parseFloat(coin.quote.USD.percent_change_24h),
+          volume24h: parseFloat(coin.quote.USD.volume_24h),
+          liquidity: parseFloat(coin.quote.USD.market_cap),
+          fdv: parseFloat(coin.quote.USD.fully_diluted_market_cap || coin.quote.USD.market_cap),
         };
       }
       

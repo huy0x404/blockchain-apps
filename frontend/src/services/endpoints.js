@@ -12,11 +12,7 @@ const ENDPOINTS = {
     getAll: '/airdrop',
     getActive: '/airdrop/active',
     getUpcoming: '/airdrop/upcoming',
-    searchTwitter: '/airdrop/search/twitter',
     getById: (id) => `/airdrop/${id}`,
-    create: '/airdrop',
-    update: (id) => `/airdrop/${id}`,
-    delete: (id) => `/airdrop/${id}`,
   },
 
   // DeFi Analytics
@@ -30,14 +26,6 @@ const ENDPOINTS = {
     getPrices: '/defi/prices',
     searchToken: '/defi/search',
     getTokenPairs: (chain, address) => `/defi/pairs/${chain}/${address}`,
-  },
-
-  // AI Analyzer
-  ai: {
-    analyzeWallet: (address) => `/ai/wallet/${address}`,
-    analyzeToken: (chain, address) => `/ai/token/${chain}/${address}`,
-    generateInsights: '/ai/insights',
-    predictBehavior: (address) => `/ai/predict/${address}`,
   },
 };
 

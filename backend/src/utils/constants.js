@@ -32,9 +32,8 @@ module.exports = {
     ETHERSCAN: 'https://api.etherscan.io/api',
     BSCSCAN: 'https://api.bscscan.com/api',
     POLYGONSCAN: 'https://api.polygonscan.com/api',
-    DEFILLAMA: 'https://api.llama.fi',
-    DEXSCREENER: 'https://api.dexscreener.com/latest',
-    COINGECKO: 'https://api.coingecko.com/api/v3',
+    COINMARKETCAP: 'https://pro-api.coinmarketcap.com/v1',
+    COINMARKETCAP_SANDBOX: 'https://sandbox-api.coinmarketcap.com/v1',
   },
 
   // Alert Thresholds

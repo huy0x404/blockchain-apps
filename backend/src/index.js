@@ -5,24 +5,15 @@ const compression = require('compression');
 const rateLimit = require('express-rate-limit');
 
 const config = require('./config/env');
-const connectDB = require('./config/db');
 const logger = require('./utils/logger');
 
 // Import routes
 const whaleRoutes = require('./routes/whaleRoutes');
 const airdropRoutes = require('./routes/airdropRoutes');
 const defiRoutes = require('./routes/defiRoutes');
-const aiRoutes = require('./routes/aiRoutes');
-
-// Import bots
-const whaleTrackerBot = require('./bots/whaleTrackerBot');
-const alertService = require('./bots/alertService');
 
 // Initialize Express app
 const app = express();
-
-// Connect to database
-connectDB();
 
 // Middleware
 app.use(helmet());
@@ -49,7 +40,6 @@ app.get('/', (req, res) => {
       whale: '/api/whale',
       airdrop: '/api/airdrop',
       defi: '/api/defi',
-      ai: '/api/ai',
     },
   });
 });
@@ -57,7 +47,6 @@ app.get('/', (req, res) => {
 app.use('/api/whale', whaleRoutes);
 app.use('/api/airdrop', airdropRoutes);
 app.use('/api/defi', defiRoutes);
-app.use('/api/ai', aiRoutes);
 
 // Health check endpoint
 app.get('/health', (req, res) => {
@@ -90,18 +79,11 @@ app.use((err, req, res, next) => {
 const PORT = config.PORT;
 const server = app.listen(PORT, () => {
   logger.info(`Server running on port ${PORT} in ${config.NODE_ENV} mode`);
-  
-  // Start whale tracker bot monitoring (if configured)
-  if (config.TELEGRAM_BOT_TOKEN) {
-    whaleTrackerBot.startMonitoring(60000); // Check every minute
-    logger.info('Whale tracker bot started');
-  }
 });
 
 // Graceful shutdown
 process.on('SIGTERM', () => {
   logger.info('SIGTERM received, shutting down gracefully');
-  whaleTrackerBot.stopMonitoring();
   server.close(() => {
     logger.info('Server closed');
     process.exit(0);
@@ -110,7 +92,6 @@ process.on('SIGTERM', () => {
 
 process.on('SIGINT', () => {
   logger.info('SIGINT received, shutting down gracefully');
-  whaleTrackerBot.stopMonitoring();
   server.close(() => {
     logger.info('Server closed');
     process.exit(0);
