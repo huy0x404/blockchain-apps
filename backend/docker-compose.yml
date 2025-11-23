@@ -1,0 +1,37 @@
+version: '3.8'
+
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: blockchain-apps-backend
+    restart: unless-stopped
+    ports:
+      - "5000:8080"
+    environment:
+      NODE_ENV: production
+      PORT: 8080
+      ETHERSCAN_API_KEY: ${ETHERSCAN_API_KEY}
+      ZAN_API_KEY: ${ZAN_API_KEY}
+      ZAN_API_URL: ${ZAN_API_URL}
+      COINMARKETCAP_API_KEY: ${COINMARKETCAP_API_KEY}
+      RATE_LIMIT_WINDOW_MS: ${RATE_LIMIT_WINDOW_MS:-900000}
+      RATE_LIMIT_MAX_REQUESTS: ${RATE_LIMIT_MAX_REQUESTS:-100}
+    env_file:
+      - .env
+    networks:
+      - blockchain-network
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    volumes:
+      # Mount logs directory (optional)
+      - ./logs:/app/logs:rw
+
+networks:
+  blockchain-network:
+    driver: bridge

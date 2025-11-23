@@ -53,7 +53,39 @@
 
 ---
 
-## 📖 Chi tiết từng platform
+---
+
+## 🐳 Docker Deployment
+
+**Pros:**
+- ✅ Chạy ở bất kỳ đâu
+- ✅ Consistent environment
+- ✅ Dễ scale
+- ✅ Isolate dependencies
+
+**Use case:**
+- VPS deployment
+- Kubernetes
+- Self-hosted
+- Multi-platform
+
+**Deploy:**
+```bash
+# Build
+docker build -t blockchain-apps-backend .
+
+# Run
+docker run -p 5000:8080 --env-file .env blockchain-apps-backend
+
+# Or use docker-compose
+docker-compose up -d
+```
+
+**Files:** `backend/README-DOCKER.md`
+
+---
+
+## 📚 Chi tiết từng platform
 
 ### 1. Cyclic.sh ⭐⭐⭐⭐⭐
 

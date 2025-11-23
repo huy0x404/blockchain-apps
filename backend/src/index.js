@@ -76,8 +76,8 @@ app.use((err, req, res, next) => {
 });
 
 // Start server
-const PORT = config.PORT;
-const server = app.listen(PORT, () => {
+const PORT = process.env.PORT || config.PORT || 8080;
+const server = app.listen(PORT, '0.0.0.0', () => {
   logger.info(`Server running on port ${PORT} in ${config.NODE_ENV} mode`);
 });
 

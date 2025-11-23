@@ -1,0 +1,19 @@
+# Development with hot reload
+FROM node:18-alpine
+
+WORKDIR /app
+
+# Copy package files
+COPY package*.json ./
+
+# Install all dependencies (including dev)
+RUN npm install
+
+# Copy source
+COPY . .
+
+# Expose port
+EXPOSE 8080
+
+# Run with nodemon for hot reload
+CMD ["npm", "run", "dev"]

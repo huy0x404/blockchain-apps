@@ -1,0 +1,33 @@
+version: '3.8'
+
+services:
+  backend-dev:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    container_name: blockchain-apps-backend-dev
+    restart: unless-stopped
+    ports:
+      - "5000:8080"
+    environment:
+      NODE_ENV: development
+      PORT: 8080
+      ETHERSCAN_API_KEY: ${ETHERSCAN_API_KEY}
+      ZAN_API_KEY: ${ZAN_API_KEY}
+      ZAN_API_URL: ${ZAN_API_URL}
+      COINMARKETCAP_API_KEY: ${COINMARKETCAP_API_KEY}
+    env_file:
+      - .env
+    networks:
+      - blockchain-network-dev
+    volumes:
+      # Mount source code for hot reload
+      - ./src:/app/src:ro
+      - ./package.json:/app/package.json:ro
+      # Mount logs
+      - ./logs:/app/logs:rw
+    command: npm run dev
+
+networks:
+  blockchain-network-dev:
+    driver: bridge
