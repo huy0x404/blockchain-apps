@@ -1,0 +1,13 @@
+v: 0
+micros:
+  - name: blockchain-api
+    src: ./
+    engine: nodejs18
+    run: npm start
+    public_routes:
+      - "/*"
+    env:
+      - name: NODE_ENV
+        default: production
+      - name: PORT
+        default: 8080

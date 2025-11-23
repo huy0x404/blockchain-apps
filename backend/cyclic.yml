@@ -1,0 +1,9 @@
+# Build config
+[build]
+  command = "npm install"
+
+# Deploy config
+[deploy]
+  command = "npm start"
+
+# Environment variables will be set in dashboard
