@@ -28,6 +28,11 @@ export const formatUSD = (amount) => {
 };
 
 /**
+ * Format currency (alias for formatUSD)
+ */
+export const formatCurrency = formatUSD;
+
+/**
  * Format large numbers (K, M, B)
  */
 export const formatCompactNumber = (num) => {
@@ -80,6 +85,11 @@ export const getTimeAgo = (timestamp) => {
   
   return 'just now';
 };
+
+/**
+ * Format time ago (alias for getTimeAgo)
+ */
+export const formatTimeAgo = getTimeAgo;
 
 /**
  * Format date
